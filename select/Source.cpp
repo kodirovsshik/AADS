@@ -1,112 +1,140 @@
 
-import <concepts>;
-import <iostream>;
-import <utility>;
+import <iterator>;
 import <functional>;
+import <concepts>;
 import <random>;
+import <ksn/metapr.hpp>;
 
 
 template<
 	std::forward_iterator It,
 	class T = std::iterator_traits<It>::value_type,
 	std::strict_weak_order<T, T> Pred = std::less<T>>
-It rearrange(It begin, It end, It value, Pred pred = {})
+It rearrange_by_iter(It begin, It end, It value, Pred pred = {})
 {
-	It result = end;
-	while (begin != end)
+	return {};
+}
+
+template<
+	std::forward_iterator It,
+	class T = std::iterator_traits<It>::value_type,
+	std::strict_weak_order<T, T> Pred>
+It rearrange_by_value(It begin, It end, T& value, Pred pred = {})
+{
+	while (begin != end && pred(*begin, value))
+		++begin;
+
+	It ptr = begin;
+	while (ptr != end)
 	{
-		if (!pred(*value, *begin))
-			++begin;
-		else
+		if (pred(*ptr, value))
 		{
-			while (true)
-			{
-				--end;
-				if (begin == end)
-					break;
-				else if (!pred(*value, *end))
-				{
-					std::iter_swap(begin, end);
-					if (value == begin)
-						value = end;
-					else if (value == end)
-						value = begin;
-					--result;
-					++begin;
-					break;
-				}
-			}
+			std::iter_swap(begin, ptr);
+			++begin;
 		}
+		++ptr;
 	}
 	return begin;
 }
 
-void assert(bool cond)
+template<class R>
+class inverse_relation_t
 {
-	if (!cond)
-		__debugbreak();
+	R ref;
+public:
+	template<ksn::universal_reference<R> T>
+	inverse_relation_t(T obj)
+		: ref(std::forward<R>(obj))
+	{
+	}
+
+	template<class A, class B> requires(std::regular_invocable<R, B&&, A&&>)
+	constexpr bool operator()(A&& a, B&& b)
+	{
+		return ref(b, a);
+	}
+};
+
+template<
+	std::forward_iterator It,
+	class T = std::iterator_traits<It>::value_type,
+	std::strict_weak_order<T, T> Pred = std::less<T>>
+std::pair<It, It> rearrange_by_value_2way(It begin, It end, T value, Pred pred = {})
+{
+	using inv_pred_t = inverse_relation_t<Pred>;
+
+	It p1 = rearrange_by_value(begin, end, value, pred);
+	It p2 = rearrange_by_value(
+		std::reverse_iterator<It>(end),
+		std::reverse_iterator<It>(p1),
+		value, inv_pred_t(pred)).base();
+	return { p1, p2 };
 }
 
-template<std::random_access_iterator It, class T = std::iterator_traits<It>::value_type, std::strict_weak_order<T, T> Pred = std::less<void>>
-void nth_element(It begin, It nth, It end, Pred pred = {})
+
+template<
+	std::forward_iterator It,
+	class T = std::iterator_traits<It>::value_type,
+	std::strict_weak_order<T, T> Pred = std::less<T>>
+void selection_sort(It begin, It end, Pred pred = {})
 {
-	static std::minstd_rand rng;
-
-	while (true)
+	while (begin != end)
 	{
-		const size_t N = end - begin;
-		if (N <= 1)
-			return;
-
-		It p1 = begin + rng() % N;
-		It p2 = begin + rng() % N;
-		It p3 = begin + rng() % N;
-
-		if (pred(*p2, *p1)) std::swap(p1, p2);
-		if (pred(*p3, *p2)) std::swap(p3, p2);
-		if (pred(*p2, *p1)) std::swap(p1, p2);
-
-		It div = rearrange(begin, end, p2, pred);
-		//TODO: handle arrays of same element
-		if (div <= nth)
-			begin = div;
-		else
-			end = div;
+		It p = begin, min = p;
+		while (p != end)
+		{
+			if (pred(*p, *min))
+				min = p;
+			++p;
+		}
+		std::iter_swap(min, begin);
+		++begin;
 	}
 }
-//it's not quick bruh
-template<std::random_access_iterator It, class T = std::iterator_traits<It>::value_type, std::strict_weak_order<T, T> Pred = std::less<void>>
+
+
+template<
+	std::random_access_iterator It,
+	class T = std::iterator_traits<It>::value_type,
+	std::strict_weak_order<T, T> Pred = std::less<T>>
 void quick_sort(It begin, It end, Pred pred = {})
 {
-	const size_t n = end - begin;
+	const auto n = end - begin;
 	if (n <= 1)
 		return;
+	if (n <= 16) //~10% better
+		return selection_sort(begin, end, pred);
 
-	auto nth = begin + n / 2;
-	nth_element(begin, nth, end, pred);
-	quick_sort(begin, nth, pred);
-	quick_sort(nth, end, pred);
+	static std::minstd_rand rng;;
+
+	It p1 = begin + rng() % n;
+	It p2 = begin + rng() % n;
+	It p3 = begin + rng() % n;
+
+	if (pred(*p2, *p1)) std::iter_swap(p2, p1);
+	if (pred(*p3, *p2)) std::iter_swap(p3, p2);
+	if (pred(*p2, *p1)) std::iter_swap(p2, p1);
+
+	auto [low, high] = rearrange_by_value_2way(begin, end, *p2, pred);
+	quick_sort(begin, low, pred);
+	quick_sort(high, end, pred);
 }
+
+
+
 
 int main()
 {
-	std::mt19937_64 rng;
-	std::vector<int> v;
-	
-	
-	
-	static constexpr size_t N = 2000;
-	for (size_t i = 0; i < N; ++i)
-	{
-		std::generate_n(std::back_inserter(v), N, [&] { return (int)rng(); });
+	using namespace std;
+	vector<int> arr(100000), v;
 
-		quick_sort(v.begin(), v.end());
+	std::generate_n(std::begin(arr), std::size(arr), [] {return (int)rand(); });
 
-		if (!std::ranges::is_sorted(v))
-			std::cout << "Error on test " << i << std::endl;
-		if (i % 100 == 0)
-			std::cout << i << std::endl;
-		v.clear();
-	}
-	return 0;
+	v = arr;
+	std::sort(std::begin(v), std::end(v));
+
+	v = arr;
+	quick_sort(std::begin(v), std::end(v));
+
+	[] {}();
 }
