@@ -7,6 +7,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "heap", "heap\heap.vcxproj",
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "select", "select\select.vcxproj", "{DF9B4EBA-7FE3-416C-A4DD-A668A7A20D73}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "radix_sort", "radix_sort\radix_sort.vcxproj", "{4CDDCADA-B644-428A-8EE6-718C8788DECB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -31,6 +33,14 @@ Global
 		{DF9B4EBA-7FE3-416C-A4DD-A668A7A20D73}.Release|x64.Build.0 = Release|x64
 		{DF9B4EBA-7FE3-416C-A4DD-A668A7A20D73}.Release|x86.ActiveCfg = Release|Win32
 		{DF9B4EBA-7FE3-416C-A4DD-A668A7A20D73}.Release|x86.Build.0 = Release|Win32
+		{4CDDCADA-B644-428A-8EE6-718C8788DECB}.Debug|x64.ActiveCfg = Debug|x64
+		{4CDDCADA-B644-428A-8EE6-718C8788DECB}.Debug|x64.Build.0 = Debug|x64
+		{4CDDCADA-B644-428A-8EE6-718C8788DECB}.Debug|x86.ActiveCfg = Debug|Win32
+		{4CDDCADA-B644-428A-8EE6-718C8788DECB}.Debug|x86.Build.0 = Debug|Win32
+		{4CDDCADA-B644-428A-8EE6-718C8788DECB}.Release|x64.ActiveCfg = Release|x64
+		{4CDDCADA-B644-428A-8EE6-718C8788DECB}.Release|x64.Build.0 = Release|x64
+		{4CDDCADA-B644-428A-8EE6-718C8788DECB}.Release|x86.ActiveCfg = Release|Win32
+		{4CDDCADA-B644-428A-8EE6-718C8788DECB}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

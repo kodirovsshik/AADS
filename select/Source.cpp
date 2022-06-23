@@ -80,11 +80,13 @@ void selection_sort(It begin, It end, Pred pred = {})
 {
 	while (begin != end)
 	{
-		It p = begin, min = p;
+		It p = begin, min = p, max = p;
 		while (p != end)
 		{
 			if (pred(*p, *min))
 				min = p;
+			if (pred(*max, *p))
+				max = p;
 			++p;
 		}
 		std::iter_swap(min, begin);
