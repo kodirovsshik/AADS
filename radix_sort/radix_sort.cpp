@@ -40,7 +40,7 @@ thread_local _radix_sort_data_t<T> _radix_sort_data;
 
 
 template<std::random_access_iterator Iter>
-void radix_sort_based(Iter begin, Iter end, uint8_t base_log2, uint8_t iterations) noexcept
+void _radix_sort_based(Iter begin, Iter end, uint8_t base_log2, uint8_t iterations) noexcept
 {
 	using T = std::iterator_traits<Iter>::value_type;
 	using RSIter = std::reverse_iterator<typename std::span<T>::iterator>;
@@ -112,18 +112,19 @@ auto reconstruct(T& obj)
 	swap(obj, aux);
 }
 template<class T>
-void make_clean_vector(T& v, size_t n)
+void ensure_vector_size(T& v, size_t n)
 {
-	v.clear();
-	v.resize(n);
+	if (v.size() < n)
+		v.resize(n);
 }
 
 template<class T>
-std::pair<uint8_t, uint8_t> _radix_sort_get_optimal_base(const std::make_unsigned_t<T>& max, size_t n)
+std::pair<uint8_t, uint8_t> _radix_sort_get_optimal_base(const T& max, size_t n)
 {
-	uint8_t base_log2 = max < _radix_sort_max_base_log ? max : _radix_sort_max_base_log;
-	uint8_t iterations = _radix_sort_log(max, base_log2) + 1;
-	return { base_log2, iterations };
+	if (max < (1 << _radix_sort_max_base_log))
+		return { _radix_sort_log(max, 2) + 1 , 1 };
+	else
+		return { _radix_sort_max_base_log, _radix_sort_log(max, _radix_sort_max_base_log) + 1 };
 }
 
 template<std::random_access_iterator Iter>
@@ -135,7 +136,7 @@ void radix_sort(Iter begin, Iter end) noexcept
 	if (n <= 1)
 		return;
 
-	make_clean_vector(_radix_sort_data<T>.auxillary, n);
+	ensure_vector_size(_radix_sort_data<T>.auxillary, n);
 
 	auto [pmin, pmax] = std::minmax_element(begin, end);
 	T min = *pmin;
@@ -146,7 +147,7 @@ void radix_sort(Iter begin, Iter end) noexcept
 			*p -= min;
 	
 	auto [base_log2, iterations] = _radix_sort_get_optimal_base<T>(max, n);
-	radix_sort_based(begin, end, base_log2, iterations);
+	_radix_sort_based(begin, end, base_log2, iterations);
 
 	if (min < 0)
 		for (auto p = begin; p != end; ++p)
@@ -158,13 +159,12 @@ void radix_sort(Iter begin, Iter end) noexcept
 
 
 
-
 #include <array>
 #include <chrono>
 #include <random>
 #include <iostream>
 
-static constexpr size_t N = 10'000'000;
+static constexpr size_t N = 1'000'000;
 using arr_t = std::array<unsigned int, N>;
 
 template<class callable_t>
@@ -233,4 +233,6 @@ int main()
 	measure(starting_arr, test_std_sort, "std::sort");
 	measure(starting_arr, test_std_stable_sort, "std::stable_sort");
 	measure(starting_arr, test_radix_sort, "LSD Radix sort (base autopicked)");
+
+	return 0;
 }
