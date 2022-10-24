@@ -122,7 +122,7 @@ template<class T>
 std::pair<uint8_t, uint8_t> _radix_sort_get_optimal_base(const T& max, size_t n)
 {
 	if (max < (1 << _radix_sort_max_base_log))
-		return { _radix_sort_log(max, 2) + 1 , 1 };
+		return { _radix_sort_log(max, 1) + 1 , 1 };
 	else
 		return { _radix_sort_max_base_log, _radix_sort_log(max, _radix_sort_max_base_log) + 1 };
 }
@@ -207,6 +207,12 @@ float measure(const arr_t& starting_arr, callable_t&& callee, const char* name)
 
 
 int main()
+{
+	_radix_sort_data<int>.always_free_auxillary = false;
+	int arr[] = { 39 ,02 ,70 ,20 ,28 ,41 ,82 ,81 ,12 ,99 ,34 ,96 ,10 ,67 ,85 ,16 };
+	radix_sort(arr + 0, std::end(arr));
+}
+int main1()
 {
 	std::mt19937 rng(0);
 
